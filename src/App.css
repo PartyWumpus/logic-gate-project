@@ -1,0 +1,76 @@
+
+* {
+  box-sizing: border-box;
+}
+
+main {
+  display:flex;
+  gap: 10px;
+  position:fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  text-align: center;
+}
+
+.store {
+  width: 20%;
+  padding: 15px;
+  margin: 5px;
+  background-color: gray;
+}
+
+.main-view {
+  width: 100%;
+  padding: 15px;
+  margin: 5px;
+  background-color: gray;
+  
+}
+
+
+.component {
+  background-color: rgba(150, 150, 150, 1);
+  background-size: contain;
+  position:absolute;
+  background-repeat: no-repeat;
+  width: 150px;
+  height: 150px;
+  padding: 2px;
+  border-radius: 5px;
+
+  border-style: dotted;
+}
+
+.component button {
+  position:absolute;
+}
+
+.component button.IN {left:-5%;}
+.component button.OUT {right:-5%;}
+
+.component button:nth-child(1 of .IN) {top:25%;}
+.component button:nth-child(2 of .IN) {top:50%;}
+.component button:nth-child(3 of .IN) {top:75%;}
+.component button:nth-child(1 of .OUT) {top:25%;}
+.component button:nth-child(2 of .OUT) {top:50%;}
+.component button:nth-child(3 of .OUT) {top:75%;}
+
+.component.true {background-color: rgba(73, 212, 150, 1);}
+.component.false {background-color: rgba(255, 66, 66, 1);}
+.connector.true svg path {stroke: rgba(73, 212, 150, 1);}
+.connector.false svg path {stroke: rgba(255, 66, 66, 1);}
+
+/*
+.component.AND {background-image:url("/gates/AND.png");}
+.component.OR {background-image:url("/gates/OR.png");}
+.component.XOR {background-image:url("/gates/XOR.png");}
+.component.NAND {background-image:url("/gates/NAND.png");}
+.component.NOR {background-image:url("/gates/NOR.png");}
+.component.XNOR {background-image:url("/gates/XNOR.png");}
+.component.NOT {background-image:url("/gates/NOT.png");}
+
+.component.INPUT {background-image:url("/gates/INPUT.png");}
+.component.OUTPUT {background-image:url("/gates/OUTPUT.png");}
+*/
