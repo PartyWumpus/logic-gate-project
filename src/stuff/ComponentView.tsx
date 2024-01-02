@@ -28,32 +28,71 @@ export function identifierToString(type: "IN" | "OUT", index: number, id: string
   return `${type}/${index}/${id}`
 }
 
-function DraggableComponent(
-  {component,select,interactHandler,deleteElement,updateXarrow}: 
+const DraggableComponent = function DraggableComponent(
+  {component,SetComponents,components,select,updateXarrow}: 
   {component: Component, 
-   select: (event: MouseEvent<HTMLButtonElement>) => void, 
-   interactHandler: (id: string) => void,
-   deleteElement: (id: string) => void,
-   updateXarrow: () => void
+   SetComponents: SetStateType<ComponentList>,
+   components: ComponentList,
+   select: (e: MouseEvent<HTMLButtonElement>) => void,
+   updateXarrow: () => void,
   }) {
   const nodeRef = React.useRef<HTMLDivElement>(null);
+
   
-  return <Draggable onDrag={updateXarrow} nodeRef={nodeRef} bounds="parent" defaultPosition={component.coords} >
-        <div ref={nodeRef} style={{}} className={classNames("component",component.name,component.values?.toString())}>
-          {component instanceof Input && <button onClick={() => interactHandler(component.id)}>swap</button>}
-          {[...Array(component.numInputs)].map((_, i) => <button key={i} className={"IN"} id={identifierToString("IN",i,component.id)} onClick={select} >IN</button>)}
-          {[...Array(component.numOutputs)].map((_, i) => <button key={i} className={"OUT"} id={identifierToString("OUT",i,component.id)} onClick={select} >OUT</button>)}
-          <p>{component.values?.toString()}</p>
-          <p>{component.name}</p>
-          {<ComponentTable component={component}/>}
-          <button id={component.id} onClick={() => deleteElement(component.id)}>delete me :)</button>
+
+  function interactHandler() {
+    const nextState = produce(components, draft => {
+      draft[component.id].interact()
+      Component.resolve_everything_from_draft(draft)
+    })
+    SetComponents(nextState)
+  }
+
+  function stopHandler(e, data) {
+    const nextState = produce(components, draft => {
+      draft[component.id].onStop(e, data)
+    })
+    SetComponents(nextState)
+  }
+
+  function deleteElement() {
+    const id = component.id
+    const nextState = produce(components, draft => {
+      delete draft[id]
+      // if (selectedConnection && stringToIdentifier(selectedConnection).id == id) {setSelectedConnection(null)}
+      // delete all connections to the component
+      for (const i in draft) {
+        const component = draft[i]
+        for (const [index, connection] of component.inputs.entries()) {
+          if (connection?.id == id) {component.inputs[index] = null}
+        }
+      }
+      Component.resolve_everything_from_draft(draft)
+    })
+    SetComponents(nextState)
+  }
+
+  function contextMenuHandler(e) {
+    e.preventDefault();
+    console.log("hello world")
+  }
+  
+  return <Draggable onStop={stopHandler} onDrag={updateXarrow} nodeRef={nodeRef} bounds="parent" defaultPosition={component.coords} >
+        <div onContextMenu={contextMenuHandler} ref={nodeRef} className={classNames("component",component.name,component.values?.toString())}>
+          {component instanceof Input && <button onClick={interactHandler}>swap</button>}
+          {component.inputNames.map((name, i) => <button key={i} className={"IN"} id={identifierToString("IN",i,component.id)} onClick={select} >{name}</button>)}
+          {component.outputNames.map((name, i) => <button key={i} className={"OUT"} id={identifierToString("OUT",i,component.id)} onClick={select} >{name}</button>)}
+          
+          <div className="component-context-menu" >
+            <p>{component.values?.toString()}</p>
+            <p>{component.name}</p>
+            <ComponentTable component={component}/>
+            <button id={component.id} onClick={deleteElement}>delete me :)</button>
+          </div>
         </div>
       </Draggable>
 }
 
-DraggableComponent.whyDidYouRender = {
-  logOnDifferentValues: true,
-}
 
 
 function MouseArrow({startID}: {startID: string}) {
@@ -103,37 +142,13 @@ export function ComponentView({components, SetComponents}: {components: Componen
     })
     SetComponents(nextState)
   }
-
-  function interactHandler(id: string) {
-    const nextState = produce(components, draft => {
-      draft[id].interact()
-      Component.resolve_everything_from_draft(draft)
-    })
-    SetComponents(nextState)
-  }
-
-  function deleteElement(id: string) {
-    const nextState = produce(components, draft => {
-      delete draft[id]
-      if (selectedConnection && stringToIdentifier(selectedConnection).id == id) {setSelectedConnection(null)}
-      // delete all connections to the component
-      for (const i in draft) {
-        const component = draft[i]
-        for (const [index, connection] of component.inputs.entries()) {
-          if (connection?.id == id) {component.inputs[index] = null}
-        }
-      }
-      Component.resolve_everything_from_draft(draft)
-    })
-    SetComponents(nextState)
-  }
   
   return (
   <div className="main-view">
     <Xwrapper>
       {Object.values(components).map((component: Component) => 
-        <DraggableComponent key={component.id} component={component} select={select} 
-          interactHandler={interactHandler} deleteElement={deleteElement} updateXarrow={updateXarrow}
+        <DraggableComponent key={component.id} component={component} SetComponents={SetComponents} 
+          select={select} updateXarrow={updateXarrow} components={components}
         />
       )}
     </Xwrapper>

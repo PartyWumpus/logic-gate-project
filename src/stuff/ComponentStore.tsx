@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 import { SetStateType } from './util'
 import { ComponentList, Component } from './Component'
-import { LogicGate, Input, Output, SR_Latch, Nested_Component, Test } from './Component'
+import { LogicGate, Input, Output, SR_Latch, Nested_Component, D_Latch, Test } from './Component'
 
 export function ComponentStore({components, SetComponents}: {components:ComponentList, SetComponents:SetStateType<ComponentList>}) {
   const [save, SetSave] = useState<string[]>([])
@@ -37,6 +37,7 @@ export function ComponentStore({components, SetComponents}: {components:Componen
     <button onClick={() => add_component(new Input())}>Input</button>
     <button onClick={() => add_component(new Output())}>Output</button>
     <button onClick={() => add_component(new SR_Latch())}>SR Latch</button>
+    <button onClick={() => add_component(new D_Latch())}>D Latch</button>
   </div>
   <div>
     <button onClick={() => {const x = Component.saveToJSON(components);console.log(x);SetSave([...save, x])}}>save the state</button>

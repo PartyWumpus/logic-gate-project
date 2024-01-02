@@ -36,6 +36,8 @@ export abstract class Component {
   private __inputs: (connection | null)[]
   /** The coordinates of the component. They are changed when the component stops being dragged. Used so position can be kept after (de)serialization */
   private __coords: coordinates
+  inputNames: string[]
+  outputNames: string[]
   constructor(numInputs: number, numOutputs: number, name: string) {
     // static/readonly
     this.id = crypto.randomUUID();
@@ -49,6 +51,22 @@ export abstract class Component {
     this.__values = new Array(numOutputs).fill(null);
     this.__inputs = new Array(numInputs).fill(null);
     this.__coords = {x:0,y:0}
+
+    // default input names are the letters of the alphabet
+    let names = []
+    for (let i = 0; i < numInputs; i++) {
+      names.push((i+10).toString(36).toUpperCase())
+    }
+    this.inputNames = names
+
+    // default output names are Q0, Q1, etc
+    if (this.numOutputs == 1) {this.outputNames = ["Q"]} else {
+      names = []
+      for (let i = 0; i < numOutputs; i++) {
+        names.push("Q" + i)
+      }
+      this.outputNames = names
+    }
   }
 
   /** The coordinates of this component */
@@ -185,14 +203,34 @@ export class Output extends Component {
 export class SR_Latch extends Component {
   state: boolean | null
   constructor() {
-    super(2, 2, "SR_Latch");
+    super(2, 2, "SR Latch");
     this.stateful = true;
+    this.inputNames = ["Set","Reset"]
     this.state = null;
   }
   resolve(inputs: (boolean | null)[], outputIndex: number) {
-    if (inputs[0] == true) {this.state = true}
     if (inputs[1] == true) {this.state = false}
-    if (inputs[0] == true && inputs[1] == true) {throw new Error("undefined behaviour, the computer explodes")} // TODO: figure out what to do for the 'invalid' state
+    if (inputs[0] == true) {this.state = true}
+    // if both are true then the state is set to true. this is the illegal state
+    
+    if (this.state == null) {return null}
+    if (outputIndex == 0) {return this.state}
+    if (outputIndex == 1) {return !(this.state)}
+    return null // shouldn't be reachable
+  }
+}
+
+export class D_Latch extends Component {
+  state: boolean | null
+  constructor() {
+    super(2, 2, "D Latch");
+    this.stateful = true;
+    this.inputNames = ["Data","Enable"]
+    this.state = null;
+  }
+  resolve(inputs: (boolean | null)[], outputIndex: number) {
+    // if enable is on, set the state to data
+    if (inputs[1] == true) {this.state = inputs[0]}
     
     if (this.state == null) {return null}
     if (outputIndex == 0) {return this.state}
@@ -264,4 +302,5 @@ export class Test extends Component {
   }
 }
 
-const classes: Record<string, any> = {"LogicGate":LogicGate,"Input":Input,"Output":Output,"SR_Latch":SR_Latch,"Nested_Component":Nested_Component,"Test":Test}
+const classes: Record<string, any> = {"LogicGate":LogicGate,"Input":Input,"Output":Output,"SR_Latch":SR_Latch,
+                                      "Nested_Component":Nested_Component,"Test":Test, "D_Latch": D_Latch}
