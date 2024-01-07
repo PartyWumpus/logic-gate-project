@@ -38,6 +38,7 @@ export function ComponentStore({components, SetComponents}: {components:Componen
     <button onClick={() => add_component(new Output())}>Output</button>
     <button onClick={() => add_component(new SR_Latch())}>SR Latch</button>
     <button onClick={() => add_component(new D_Latch())}>D Latch</button>
+    <button onClick={() => add_component(new Test())}>TEST</button>
   </div>
   <div>
     <button onClick={() => {const x = Component.saveToJSON(components);console.log(x);SetSave([...save, x])}}>save the state</button>

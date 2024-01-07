@@ -1,12 +1,12 @@
-import React, { useState, useEffect, Fragment, MouseEvent } from 'react'
+import React, { useState, useRef, useEffect, Fragment, MouseEvent, RefObject } from 'react'
 import { produce } from "immer"
 import classNames from 'classnames';
 import Draggable from 'react-draggable'
 import Xarrow, { useXarrow, Xwrapper } from "react-xarrows"
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 import { Component, ComponentList, Input } from './Component'
-import { SetStateType } from './util'
-import { ComponentTable } from './ComponentTable'
+import { SetStateType, coordinates } from './util'
 
 interface identifier {
   type: "IN" | "OUT",
@@ -28,24 +28,31 @@ export function identifierToString(type: "IN" | "OUT", index: number, id: string
   return `${type}/${index}/${id}`
 }
 
-const DraggableComponent = function DraggableComponent(
-  {component,SetComponents,components,select,updateXarrow}: 
+function DraggableComponent(
+  {component, SetComponents, components, select, updateXarrow, selectedConnection, setSelectedConnection, scale, initialCoords, setSelectedComponent}: 
   {component: Component, 
    SetComponents: SetStateType<ComponentList>,
    components: ComponentList,
    select: (e: MouseEvent<HTMLButtonElement>) => void,
    updateXarrow: () => void,
+   selectedConnection: string | null,
+   setSelectedConnection: SetStateType<string | null>,
+   scale: number,
+   initialCoords: [number,number],
+   setSelectedComponent: SetStateType<Component>,
   }) {
   const nodeRef = React.useRef<HTMLDivElement>(null);
 
-  
+  const defaultCoords = component.coords ?? {x:initialCoords[0]+350/scale,y:initialCoords[1]+250/scale} // TODO: change this to calculate the center of the screen coordinates better
 
   function interactHandler() {
+    let res;
     const nextState = produce(components, draft => {
-      draft[component.id].interact()
+      res =draft[component.id].interact()
       Component.resolve_everything_from_draft(draft)
     })
     SetComponents(nextState)
+    return res
   }
 
   function stopHandler(e, data) {
@@ -59,7 +66,7 @@ const DraggableComponent = function DraggableComponent(
     const id = component.id
     const nextState = produce(components, draft => {
       delete draft[id]
-      // if (selectedConnection && stringToIdentifier(selectedConnection).id == id) {setSelectedConnection(null)}
+       if (selectedConnection && stringToIdentifier(selectedConnection).id == id) {setSelectedConnection(null)}
       // delete all connections to the component
       for (const i in draft) {
         const component = draft[i]
@@ -74,19 +81,20 @@ const DraggableComponent = function DraggableComponent(
 
   function contextMenuHandler(e) {
     e.preventDefault();
-    console.log("hello world")
+    if (!interactHandler()) {
+      setSelectedComponent(component);
+    }
   }
   
-  return <Draggable onStop={stopHandler} onDrag={updateXarrow} nodeRef={nodeRef} bounds="parent" defaultPosition={component.coords} >
+  return <Draggable onStart={(e) => e.preventDefault()} onStop={stopHandler} onDrag={updateXarrow} nodeRef={nodeRef} bounds="parent" defaultPosition={defaultCoords} scale={scale}>
         <div onContextMenu={contextMenuHandler} ref={nodeRef} className={classNames("component",component.name,component.values?.toString())}>
-          {component instanceof Input && <button onClick={interactHandler}>swap</button>}
+          {component instanceof Input && <button onClick={interactHandler}>swap</button>} {/* this has broken for some reason. fixme! */}
           {component.inputNames.map((name, i) => <button key={i} className={"IN"} id={identifierToString("IN",i,component.id)} onClick={select} >{name}</button>)}
           {component.outputNames.map((name, i) => <button key={i} className={"OUT"} id={identifierToString("OUT",i,component.id)} onClick={select} >{name}</button>)}
           
           <div className="component-context-menu" >
             <p>{component.values?.toString()}</p>
             <p>{component.name}</p>
-            <ComponentTable component={component}/>
             <button id={component.id} onClick={deleteElement}>delete me :)</button>
           </div>
         </div>
@@ -99,24 +107,30 @@ function MouseArrow({startID}: {startID: string}) {
   const [coordinates, setCoordinates] = useState<number[] | null>(null)
   const updateXarrow = useXarrow();
 
+  function mousemove(e) {
+    setCoordinates([e.x,e.y])
+    updateXarrow()
+  }
+
   useEffect(() => {
-    window.addEventListener('mousemove', (e) => {setCoordinates([e.x,e.y]);updateXarrow()})
+    window.addEventListener('mousemove', mousemove)
+    return () => window.removeEventListener('mousemove', mousemove)
   }, []) 
 
   return coordinates &&
       <Xwrapper>
-        <div id="mouse" style={{
-          position:'absolute',
-          top:'0',
-          left:'0',
-          transform:`translateX(${coordinates[0]}px) translateY(${coordinates[1]}px)`}}
-         />
+        <div id="mouse" style={{translate:`${coordinates[0]}px ${coordinates[1]}px`}}/>
         <Xarrow passProps={{pointerEvents: "none"}} showHead={false} key={"mouse-arrow"} start={startID} end={'mouse'}/>
       </Xwrapper>
 }
 
-export function ComponentView({components, SetComponents}: {components: ComponentList, SetComponents: SetStateType<ComponentList>}) {
+export function ComponentView({components, SetComponents, setSelectedComponent}: {
+  components: ComponentList, 
+  SetComponents: SetStateType<ComponentList>, 
+  setSelectedComponent: SetStateType<Component>}) {
   const [selectedConnection, setSelectedConnection] = useState<string | null>(null);
+  const [zoom, setZoom] = useState<number>(1);
+  const [coordinates, setCoordinates] = useState<[number,number]>([0,0]);
   const updateXarrow = useXarrow();
 
   function select(event: MouseEvent<HTMLButtonElement>) {
@@ -145,27 +159,64 @@ export function ComponentView({components, SetComponents}: {components: Componen
   
   return (
   <div className="main-view">
-    <Xwrapper>
-      {Object.values(components).map((component: Component) => 
-        <DraggableComponent key={component.id} component={component} SetComponents={SetComponents} 
-          select={select} updateXarrow={updateXarrow} components={components}
-        />
+    <TransformWrapper
+      initialScale={1}
+      centerOnInit={true}
+      panning={{excluded:["component","button","p"],velocityDisabled:true}}
+      doubleClick={{disabled:true}}
+      onTransformed={(_, state ) => {
+          setZoom(state.scale);
+          setCoordinates([-state.positionX,-state.positionY])
+          updateXarrow();
+        }
+      }
+      minScale={0.125}
+      maxScale={1.5}
+    >
+      {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
+        <>
+          <div className="tools">
+            <button onClick={() => zoomIn()}>+</button>
+            <button onClick={() => zoomOut()}>-</button>
+            <button onClick={() => resetTransform()}>x</button>
+          </div>
+          <TransformComponent>
+            <Xwrapper>
+              {Object.values(components).map((component: Component) => 
+                <DraggableComponent 
+                  key={component.id} 
+                  component={component} 
+                  SetComponents={SetComponents} 
+                  select={select}
+                  updateXarrow={updateXarrow} 
+                  components={components} 
+                  selectedConnection={selectedConnection}
+                  setSelectedConnection={setSelectedConnection}
+                  scale={zoom}
+                  initialCoords={coordinates}
+                  setSelectedComponent={setSelectedComponent}
+                />
+              )}
+            </Xwrapper>
+          </TransformComponent>
+          <div className="connections-list">
+            {Object.values(components).map((component: Component) => 
+              <Fragment key={component.id}>
+                {component.inputs.map((connection, index) => connection && 
+                  <Xarrow 
+                    strokeWidth={zoom*4}
+                    divContainerProps={{className:`connector ${components[connection.id].values[connection.index]?.toString()}`}}
+                    showHead={false} key={index}
+                    start={identifierToString("OUT",connection.index,connection.id)} end={identifierToString("IN",index,component.id)}
+                  />
+                )}
+              </Fragment>
+            )}
+
+            </div>
+            { selectedConnection && <MouseArrow startID={selectedConnection}/> }
+        </>
       )}
-    </Xwrapper>
-    <div className="connections-list">
-    {Object.values(components).map((component: Component) => 
-      <Fragment key={component.id}>
-        {component.inputs.map((connection, index) => connection && 
-          <Xarrow 
-             divContainerProps={{className:`connector ${components[connection.id].values[connection.index]?.toString()}`}}
-             showHead={false} key={index}
-             start={identifierToString("OUT",connection.index,connection.id)} end={identifierToString("IN",index,component.id)}
-          />
-        )}
-      </Fragment>
-    )}
-    </div>
-    { selectedConnection && <MouseArrow startID={selectedConnection}/> }
-  </div>
-  )
+    </TransformWrapper>
+  </div>)
 }

@@ -2,16 +2,13 @@ import { immerable, Draft } from "immer"
 import { DraggableEvent, DraggableData } from 'react-draggable'
 import { plainToInstance } from "class-transformer"
 
+import { coordinates } from './util'
+
 export type ComponentList = Record<string, Component>
 
 interface connection {
   id: string;
   index: number;
-}
-
-interface coordinates {
-  x: number;
-  y: number;
 }
 
 /** TODO: find a good description for this base class */
@@ -35,7 +32,7 @@ export abstract class Component {
   /** An array of the components connected to the inputs of this component. Length = `numInputs` */
   private __inputs: (connection | null)[]
   /** The coordinates of the component. They are changed when the component stops being dragged. Used so position can be kept after (de)serialization */
-  private __coords: coordinates
+  private __coords: coordinates | null
   inputNames: string[]
   outputNames: string[]
   constructor(numInputs: number, numOutputs: number, name: string) {
@@ -50,7 +47,7 @@ export abstract class Component {
     // will change
     this.__values = new Array(numOutputs).fill(null);
     this.__inputs = new Array(numInputs).fill(null);
-    this.__coords = {x:0,y:0}
+    this.__coords = null
 
     // default input names are the letters of the alphabet
     let names = []
@@ -81,7 +78,7 @@ export abstract class Component {
   abstract resolve(inputs: (boolean | null)[], outputIndex: number): boolean | null
 
   /** Run when the component is clicked on, no default implementation */
-  interact() {}
+  interact() {return false}
 
   /** Runs when the component stops moving to update it's internal coordinates */
   onStop(e: DraggableEvent, data: DraggableData) {
@@ -188,6 +185,7 @@ export class Input extends Component {
   
   interact() {
     this.__state = !(this.__state)
+    return true
   } 
 
   set state(value: boolean) {this.__state = value}
@@ -198,6 +196,7 @@ export class Output extends Component {
     super(1, 0, "Output");
   }
   resolve(inputs: (boolean | null)[], outputIndex: number) { return inputs[0] }
+  interact() {return true}
 }
 
 export class SR_Latch extends Component {
@@ -212,11 +211,12 @@ export class SR_Latch extends Component {
     if (inputs[1] == true) {this.state = false}
     if (inputs[0] == true) {this.state = true}
     // if both are true then the state is set to true. this is the illegal state
-    
+    if (inputs[0] == true && inputs[1] == true) {return true}
+      
     if (this.state == null) {return null}
     if (outputIndex == 0) {return this.state}
     if (outputIndex == 1) {return !(this.state)}
-    return null // shouldn't be reachable
+    return null // shouldn't be reachable, just here so typescript shuts up
   }
 }
 
@@ -249,11 +249,13 @@ export class Nested_Component extends Component {
   constructor(internalComponents: ComponentList | string) {
     let inputIDs = []
     let outputIDs = []
+    let stateful = false
     // the class-transformer library goes through this constructor with undefined values for all inputs
     // this part of the code is undeeded if being deserialized anyway, so just skip it
     if (typeof internalComponents !== 'undefined') { 
       if (typeof internalComponents === 'string') {internalComponents = Component.loadFromJSON(internalComponents)}
       for (const [id, component] of Object.entries(internalComponents)) {
+        if (component.stateful == true) {stateful = true; console.log(stateful)}
         if (component instanceof Input) {inputIDs.push(id)}
         if (component instanceof Output) {outputIDs.push(id)}
       }
@@ -261,6 +263,8 @@ export class Nested_Component extends Component {
     super(inputIDs.length, outputIDs.length, "TODO")
     // these have to be set after super() is run
     this.internalComponents = internalComponents
+    this.stateful = stateful
+    console.log(stateful)
     this.inputIDs = inputIDs
     this.outputIDs = outputIDs
   }
@@ -286,6 +290,7 @@ export class Nested_Component extends Component {
     return this.internalComponents[this.outputIDs[outputIndex]].getValue(this.internalComponents, 0)
   }
 }
+
 
 export class Test extends Component {
   constructor() {
