@@ -1,44 +1,76 @@
-
 * {
   box-sizing: border-box;
 }
 
+/* default variables */
+:root {
+  --main-color: gray;
+}
+
+.theme-dark {
+  --main-color: gray;
+}
+
+.theme-light {
+  --main-color: white;
+}
+
 main {
-  display:flex;
+  display: flex;
   gap: 10px;
-  position:fixed;
+  position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
   width: 100vw;
   text-align: center;
+  background: lightgray;
+}
+
+label {
+  user-select: none;
+}
+
+dialog::backdrop {
+  backdrop-filter: blur(1px);
+}
+
+dialog {
+  padding-top: 0px;
 }
 
 .store {
   width: 15%;
   padding: 15px;
   margin: 5px;
-  background-color: gray;
+  background-color: var(--main-color);
+  border-radius: 5px;
 }
 
 .main-view {
   width: 70%;
   padding: 15px;
   margin: 5px;
-  background-color: gray;
+  background-color: var(--main-color);
+  clip-path: border-box;
+  border-radius: 5px;
 }
 
 .component-metadata {
   width: 15%;
   padding: 15px;
   margin: 5px;
-  background-color: gray;
+  background-color: var(--main-color);
+  border-radius: 5px;
+}
+
+.component-metadata p {
+  font-size: 30px;
 }
 
 .react-transform-wrapper {
   width: 100% !important;
   height: 100% !important;
-  clip-path: border-box;
 }
 
 .react-transform-component {
@@ -46,65 +78,274 @@ main {
   width: 500% !important;
   height: 500% !important;
   /* thanks https://stackoverflow.com/questions/3540194/how-to-make-a-grid-like-graph-paper-grid-with-just-css */
-  background-size: 50px 50px;
-  background-image: radial-gradient(circle, #00000040 3px, rgba(0, 0, 0, 0) 3px);
+  background-size: calc(1px * var(--snap, 50)) calc(1px * var(--snap, 50));
+  --line-width: calc(0.7px / var(--scale, 1));
+  background-image: linear-gradient(
+      to right,
+      #000000b0 var(--line-width, 1px),
+      transparent var(--line-width, 1px)
+    ),
+    linear-gradient(to bottom, #000000b0 var(--line-width, 1px), transparent var(--line-width, 1px));
+}
 
+.no-grid .react-transform-component {
+  background: radial-gradient(circle, #00000040 3px, rgba(0, 0, 0, 0) 3px) 25px 25px / 50px 50px;
 }
 
 .static-ui-buttons {
   position: absolute;
   z-index: 3;
+  text-align: left;
+}
+
+.static-ui-buttons * {
+  margin: 2px;
 }
 
 #mouse {
-  position:absolute;
-  top:0;
-  left:0;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
-
-
 .component {
-  background-color: rgba(150, 150, 150, 1);
+  position: absolute;
   background-size: contain;
-  position:absolute;
   background-repeat: no-repeat;
   width: 150px;
   height: 150px;
   padding: 2px;
+  background-position: center;
+}
+
+.component:not(.LogicGate) {
   border-radius: 5px;
-
-  border-style: dotted;
+  border-style: solid;
+  background-color: rgba(150, 150, 150, 1);
 }
 
-.component button {
-  position:absolute;
+.component:not(.LogicGate).true {
+  background-color: rgba(73, 212, 150, 1);
+}
+.component:not(.LogicGate).false {
+  background-color: rgba(255, 66, 66, 1);
 }
 
-.component button.IN {left:-5%;}
-.component button.OUT {right:-5%;}
+.input-buttons,
+.output-buttons {
+  position: absolute;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  top: 0;
+  pointer-events: none;
+}
 
-.component button:nth-child(1 of .IN) {top:25%;}
-.component button:nth-child(2 of .IN) {top:50%;}
-.component button:nth-child(3 of .IN) {top:75%;}
-.component button:nth-child(1 of .OUT) {top:25%;}
-.component button:nth-child(2 of .OUT) {top:50%;}
-.component button:nth-child(3 of .OUT) {top:75%;}
+.input-buttons {
+  left: -15%;
+}
 
-.component.true {background-color: rgba(73, 212, 150, 1);}
-.component.false {background-color: rgba(255, 66, 66, 1);}
-.connector.true svg path {stroke: rgba(73, 212, 150, 1);}
-.connector.false svg path {stroke: rgba(255, 66, 66, 1);}
+table {
+  font-family: monospace, math;
+}
+
+.output-buttons {
+  right: -20%;
+}
+
+.output-buttons button,
+.input-buttons button {
+  pointer-events: all;
+}
+
+.connector.true svg path {
+  stroke: rgba(73, 212, 150, 1);
+}
+.connector.false svg path {
+  stroke: rgba(255, 66, 66, 1);
+}
+
+/* sorry. */
+
+.component {
+  background-image: var(--image);
+}
+.component-metadata-image {
+  content: var(--image);
+  width: 55%;
+}
+
+/* magic mostly invisible div to stop tearing */
+/* i love web dev */
+.component::before {
+  content: "";
+  position: absolute;
+  width: 160%;
+  height: 140%;
+  background: #00000001;
+  top: -20%;
+  left: -30%;
+  pointer-events: none;
+}
+
+.LogicGate.AND {
+  --image: url("/gates/disconnected/AND.svg");
+}
+.LogicGate.OR {
+  --image: url("/gates/disconnected/OR.svg");
+}
+.LogicGate.XOR {
+  --image: url("/gates/disconnected/XOR.svg");
+}
+.LogicGate.NAND {
+  --image: url("/gates/disconnected/NAND.svg");
+}
+.LogicGate.NOR {
+  --image: url("/gates/disconnected/NOR.svg");
+}
+.LogicGate.XNOR {
+  --image: url("/gates/disconnected/XNOR.svg");
+}
+.LogicGate.NOT {
+  --image: url("/gates/disconnected/NOT.svg");
+}
+
+.LogicGate.AND.true {
+  --image: url("/gates/on/AND.svg");
+}
+.LogicGate.OR.true {
+  --image: url("/gates/on/OR.svg");
+}
+.LogicGate.XOR.true {
+  --image: url("/gates/on/XOR.svg");
+}
+.LogicGate.NAND.true {
+  --image: url("/gates/on/NAND.svg");
+}
+.LogicGate.NOR.true {
+  --image: url("/gates/on/NOR.svg");
+}
+.LogicGate.XNOR.true {
+  --image: url("/gates/on/XNOR.svg");
+}
+.LogicGate.NOT.true {
+  --image: url("/gates/on/NOT.svg");
+}
+
+.LogicGate.AND.false {
+  --image: url("/gates/off/AND.svg");
+}
+.LogicGate.OR.false {
+  --image: url("/gates/off/OR.svg");
+}
+.LogicGate.XOR.false {
+  --image: url("/gates/off/XOR.svg");
+}
+.LogicGate.NAND.false {
+  --image: url("/gates/off/NAND.svg");
+}
+.LogicGate.NOR.false {
+  --image: url("/gates/off/NOR.svg");
+}
+.LogicGate.XNOR.false {
+  --image: url("/gates/off/XNOR.svg");
+}
+.LogicGate.NOT.false {
+  --image: url("/gates/off/NOT.svg");
+}
+
+.SevenSegDisplay.value-null {
+  --image: "off";
+}
+.SevenSegDisplay.value-0 {
+  --image: "0";
+}
+.SevenSegDisplay.value-1 {
+  --image: "1";
+}
+.SevenSegDisplay.value-2 {
+  --image: "2";
+}
+.SevenSegDisplay.value-3 {
+  --image: "3";
+}
+.SevenSegDisplay.value-4 {
+  --image: "4";
+}
+.SevenSegDisplay.value-5 {
+  --image: "5";
+}
+.SevenSegDisplay.value-6 {
+  --image: "6";
+}
+.SevenSegDisplay.value-7 {
+  --image: "7";
+}
+.SevenSegDisplay.value-8 {
+  --image: "8";
+}
+.SevenSegDisplay.value-9 {
+  --image: "9";
+}
+.SevenSegDisplay.value-10 {
+  --image: "A";
+}
+.SevenSegDisplay.value-11 {
+  --image: "B";
+}
+.SevenSegDisplay.value-12 {
+  --image: "C";
+}
+.SevenSegDisplay.value-13 {
+  --image: "D";
+}
+.SevenSegDisplay.value-14 {
+  --image: "E";
+}
+.SevenSegDisplay.value-15 {
+  --image: "F";
+}
+
+.component-context-menu p::after {
+  content: var(--image);
+  padding: 5px;
+  font-weight: bold;
+}
+
+/*.component-img.INPUT {--image:url("/gates/INPUT.png");}
+.component-img.OUTPUT {--image:url("/gates/OUTPUT.png");}*/
 
 /*
-.component.AND {background-image:url("/gates/AND.png");}
-.component.OR {background-image:url("/gates/OR.png");}
-.component.XOR {background-image:url("/gates/XOR.png");}
-.component.NAND {background-image:url("/gates/NAND.png");}
-.component.NOR {background-image:url("/gates/NOR.png");}
-.component.XNOR {background-image:url("/gates/XNOR.png");}
-.component.NOT {background-image:url("/gates/NOT.png");}
+@keyframes spin {
+  from {rotate: 0deg;}
+  to  {rotate: 360deg;}
+}
 
-.component.INPUT {background-image:url("/gates/INPUT.png");}
-.component.OUTPUT {background-image:url("/gates/OUTPUT.png");}
+button, .component *, p {
+    animation:15s linear spin infinite;
+}
+
+*:nth-child(1) {
+  animation-duration: 1s;
+}
+
+*:nth-child(2n) {
+  animation-direction: reverse;
+  translate: 5px 5px;
+}
+
+*:nth-child(3n) {
+  animation-duration: 12s;
+  translate: -15px -15px;
+}
+
+*:nth-child(4n) {
+  animation-duration: 5s;
+}
+
+*:nth-child(5n) {
+  animation-direction: reverse;
+}
 */

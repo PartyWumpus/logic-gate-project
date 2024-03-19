@@ -1,13 +1,18 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App'
+/// thanks react template
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
 
-import { SettingsProvider } from './stuff/SettingsContext'
+import { Provider } from "react-redux";
+import { store } from "./state/state";
+import { enableMapSet } from "immer";
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+enableMapSet();
+
+ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <SettingsProvider>
+    <Provider store={store}>
       <App />
-    </SettingsProvider>
-  </React.StrictMode>
-)
+    </Provider>
+  </React.StrictMode>,
+);
