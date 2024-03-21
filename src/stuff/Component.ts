@@ -30,8 +30,6 @@ export abstract class Component {
 
   /** A unique id used for referencing this component from other components */
   readonly id: ComponentID;
-  /** The name of the class this is a member of, used for deserialization */
-  __type: string;
   /** The number of inputs it has */
   readonly numInputs: number;
   /** The number of outputs */
@@ -52,7 +50,6 @@ export abstract class Component {
   constructor(numInputs: number, numOutputs: number, name: string) {
     // static/readonly
     this.id = generateNewID();
-    this.__type = this.constructor.name; // thanks https://stackoverflow.com/a/36643177
     this.numInputs = numInputs;
     this.numOutputs = numOutputs;
     this.stateful = false;
@@ -62,7 +59,7 @@ export abstract class Component {
     this.values = new Array(numOutputs).fill(null);
     this.inputs = new Array(numInputs).fill(null);
     this.coords = null;
-    this.cssClasses = ["component-img", this.__type];
+    this.cssClasses = ["component-img", this.constructor.name];
 
     // default input names are the letters of the alphabet
     let names = [];
@@ -178,7 +175,7 @@ function component_replacer(key: any, value: any): any {
   } else if (value instanceof Component) {
     return {
       ___type: "Component",
-      __component_type: value.__type,
+      __component_type: value.constructor.name,
       __value: component_replacer(null, { ...value }),
     };
   } else {
