@@ -277,7 +277,7 @@ export class SRLatch extends Component {
     super(2, 2, "SR Latch");
     this.stateful = true;
     this.inputNames = ["Set", "Reset"];
-    this.outputNames = ["Q", "\u0305Q"];
+    this.outputNames = ["Q", "Q\u0305"];
     this.state = null;
   }
   resolve(inputs: (boolean | null)[], outputIndex: number) {
@@ -311,7 +311,7 @@ export class DLatch extends Component {
     super(2, 2, "D Latch");
     this.stateful = true;
     this.inputNames = ["Data", "Enable"];
-    this.outputNames = ["Q", "\u0305Q"];
+    this.outputNames = ["Q", "Q\u0305"];
     this.state = null;
   }
   resolve(inputs: (boolean | null)[], outputIndex: number) {
