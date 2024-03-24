@@ -16,10 +16,6 @@ import { useAppSelector } from "./state/hooks";
 // the only way to preload images without rendering them is to load them into an image
 // and add them to the global window object
 
-import intersect from "fast_array_intersect";
-
-window.intersect = intersect
-
 async function imagePreloader() {
   const gateTypes = ["AND", "OR", "XOR", "NAND", "NOR", "XNOR", "NOT"];
   const paths = ["/gates/disconnected/", "/gates/on/", "/gates/off/"];

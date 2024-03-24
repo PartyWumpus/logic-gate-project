@@ -23,9 +23,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.0.1",
-    "@welldone-software/why-did-you-render": "^7.0.1",
     "classnames": "^2.3.2",
-    "fast_array_intersect": "^1.1.0",
     "immer": "^10.0.2",
     "prettier": "^3.2.5",
     "react-draggable": "^4.4.5",
@@ -34,9 +32,6 @@
     "react-xarrows": "^2.0.2",
     "react-zoom-pan-pinch": "^3.3.0",
     "redux": "^5.0.1",
-    "reflect-metadata": "^0.1.13",
-    "type-fest": "^4.10.3",
-    "typedjson": "^1.8.0",
-    "use-immer": "^0.9.0"
+    "type-fest": "^4.10.3"
   }
 }
